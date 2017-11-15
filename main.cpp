@@ -142,7 +142,6 @@ int main(int argc, char** argv)
   // @task: Create y_factory (utilizing x_factory) for producing y vectors.
   y_factory yFact(xFact, N_l);
 
-  std::cout << "Factorys Erstellt" <<std::endl;
   // @task: Generate S_l y vectors with sample size N_l.
   //        To store these, you can use the supplied type samples, which
   //        is a std::vector<matrix>. This is the easier way, but your
@@ -158,16 +157,12 @@ int main(int argc, char** argv)
   for (int i = 0; i<S_l ; i++){
     samps.push_back(yFact());
   }
-
-  std::cout << "Samples Erstellt" <<std::endl;
   // @task: Compute mean and standard deviation. You may do this here or define
   //        functions for it. When using a function, make sure to pass your
   //        data as const &.
   matrix mean = computeMean(samps);
-  std::cout << "Mean Berechnet" <<std::endl;
   matrix standardDeviation = computeStandardDeviation(samps, mean);
 
-  std::cout << "Deviation Berechnet" <<std::endl;
 
 
 
@@ -181,13 +176,13 @@ int main(int argc, char** argv)
   unsigned int ySpace = (int)((upper1_l-lower1_l)/step_size_l);
   matrix histogram(xSpace, ySpace, 0);
   for (auto s = samps.begin(); s != samps.end(); s++){
-    unsigned int xBin = (int)(s->get(0,0) - lower0_l)/step_size_l;
-    unsigned int yBin = (int)(s->get(1,0) - lower0_l)/step_size_l;
+    unsigned int xBin = floor((s->get(0,0) - lower0_l)/step_size_l);
+    unsigned int yBin = floor((s->get(1,0) - lower1_l)/step_size_l);
     if(xBin >= 0 && xBin < xSpace && yBin >= 0 && yBin < ySpace){
       histogram.set(xBin, yBin, histogram.get(xBin,yBin) + 1);
     }
   }
-  histogram*= 1.0/(S_l * step_size_l * step_size_l);
+  histogram *= 1.0/(S_l * step_size_l * step_size_l);
 
 
 
@@ -213,7 +208,7 @@ int main(int argc, char** argv)
   }
 
   real errorAcc = 0;
-  matrix error(xSpace,ySpace); //Später vielleicht ohne
+  matrix error(xSpace,ySpace); //Nur  zum testen
   for (int xIdx = 0; xIdx<xSpace; xIdx++) {
     for (int yIdx = 0; yIdx < ySpace; yIdx++) {
       real hVal = histogram.get(xIdx, yIdx);
@@ -224,11 +219,7 @@ int main(int argc, char** argv)
     }
   }
 
-  //std::cout<<"Errormatrix: " << error << std::endl;
-  std::cout<<"Mean:" << mean <<std::endl;
-  std::cout<<"stdDev:" << standardDeviation <<std::endl;
-  std::cout<<"Error Summe:" << errorAcc <<std::endl;
-
+  std::cout<<"Error Sum: " << errorAcc <<std::endl;
 
 
   return 0;
