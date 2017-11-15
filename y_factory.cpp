@@ -23,6 +23,11 @@ operator() ()
   // @task: Create a 2x1 matrix y and assign to it the average of N_m matrices x
   //        created by x_factory_m. Return the thus create vector y.
   //        You get a matrix from the factory by calling:   x_factory_m()
+    matrix acc(2,1,0); //mit 0 initialisiert
+    for(int n = 0 ; i < N_m ; i++){
+        acc += x_factory_m();
+    }
+    return (1.0/N_m) * acc;
 }
 
 

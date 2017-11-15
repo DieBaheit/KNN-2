@@ -22,8 +22,8 @@ x_factory
   // @task: Call the constructors of the two distributions with the passed values.
   //        It's straight forward, but if unsure, you can take a look at
   //        function fill_with_uniform_samples of class matrix.
-  //distribution0_m(  todo  ),
-  //distribution1_m(  todo  )
+  distribution0_m(lower0_a,upper0_a),
+  distribution1_m(lower1_a,upper1_a)
 {
 }
 
@@ -66,5 +66,9 @@ operator() ()
   //        distributions using the respective engines; return the matrix.
   //        Function fill_with_uniform_samples of class matrix shows how to get
   //        a random value from a distribution and an engine.
+    matrix res(2,1);
+    res.set(0,0,distribution0_m(random_engine0_m));
+    res.set(1,0,distribution1_m(random_engine1_m));
+    return res;
 }
 

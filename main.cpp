@@ -86,6 +86,39 @@ compute_histogram_error
 }
 */
 
+matrix computeStandardDeviation(const samples &samps, matrix mean){
+  unsigned int N = samps.size();
+  matrix acc_X;
+  matrix acc_Y;
+  for (auto s = samps.begin(); s != samps.end(); s++) {
+    acc_X += pow((s->get(0,0) - mean->get(0,0)), 2);
+    acc_Y += pow((s->get(0,0) - mean->get(0,0)), 2);
+  }
+  matrix res(2,1);
+  res.set(0,0,sqrt(acc_X/N));
+  res.set(0,1,sqrt(acc_Y/N));
+  return res;
+}
+
+matrix computeMean(const samples &samps){
+  unsigned int N = samps.size();
+  matrix acc(2,1,0);
+  for (auto s = samps.begin(); s != samps.end(); s++) {
+    acc += *s;
+  }
+  return 1.0/N * acc;
+}
+
+real normalDistribution(matrix z, matrix mean, matrix stdDev){
+  real z1 = z.get(0,0);
+  real z2 = z.get(1,0);
+  real m1 = m.get(0,0);
+  real m2 = m.get(1,0);
+  real d1 = stdDev.get(0,0);
+  real d2 = stdDev.get(1,0);
+  return (1.0/(2*M_PI*d1*d2))*exp(-0.5*((pow(z1-m1,2)/pow(d1,2))+(pow(z2-m2,2)/pow(d2,2))));
+}
+
 
 int main(int argc, char** argv)
 {
@@ -105,9 +138,9 @@ int main(int argc, char** argv)
 
 
   // @task: Create x_factory for producing x vectors.
-
+  x_factory xFact(lower0_l, upper0_l, lower1_l, upper1_l);
   // @task: Create y_factory (utilizing x_factory) for producing y vectors.
-
+  y_factory yFact(xFact, N_l);
   // @task: Generate S_l y vectors with sample size N_l.
   //        To store these, you can use the supplied type samples, which
   //        is a std::vector<matrix>. This is the easier way, but your
@@ -119,11 +152,15 @@ int main(int argc, char** argv)
   //        (If you'd like to get all elaborate, you can also ommit storing the
   //        data by computing mean and variance online and directly fill the
   //        histogram with the samples. This allows for larger S, of course.)
-
+  samples samps;
+  for (int i = 0; i<S_l ; i++){
+    samps.push_back(yFact());
+  }
   // @task: Compute mean and standard deviation. You may do this here or define
   //        functions for it. When using a function, make sure to pass your
   //        data as const &.
-
+  matrix mean = computeMean(samps);
+  matrix standardDeviation = computeStandardDeviation(samps, mean);
 
   // @task: Create a 2D histogram (as matrix) and feed it with the S_l
   //        vectors created above.
@@ -131,6 +168,19 @@ int main(int argc, char** argv)
   //        The width of a histogram bin shall be step_size_l and the lower and
   //        upper bounds must correspond to those of the x vectors.
   //        Don't forget to normalize the histogram as demanded on the sheet.
+  unsigned int xSpace = (int)((upper0_l-lower0_l)/step_size_l);
+  unsigned int ySpace = (int)((upper1_l-lower1_l)/step_size_l);
+  matrix histogram(xSpace, ySpace, 0);
+  for (auto s = samps.begin(); s != samps.end(); s++){
+    unsigned int xBin = (int)(s->get(0,0) - lower0_l)/step_size_l;
+    unsigned int yBin = (int)(s->get(1,0) - lower0_l)/step_size_l;
+    if(xBin >= 0 && xBin < xSpace && yBin >= 0 && yBin < ySpace){
+      histogram.set(xBin, yBin, histogram.get(xBin,yBin) + 1);
+    }
+  }
+  histogram*= 1.0/(S_l * step_size_l * step_size_l);
+
+
 
   // @task: Compare the histogram to the normal distribution by computing the
   //        sum of squared errors (SSE).
@@ -141,6 +191,33 @@ int main(int argc, char** argv)
   //        squared distance between the value in the histogram bin and the
   //        theoretical value of the normal distribution.
   //        Write the single computed error value to std::cout. Be astonished.
+  matrix normDistrHistogr(xSpace,ySpace);
+  for (int xIdx = 0; xIdx<xSpace; xIdx++){
+    real xCentre = lower0_l + xIdx*step_size_l + step_size_l/2;
+    for (int yIdx = 0; yIdx<ySpace; yIdx++){
+      real yCentre = lower1_l + yIdx*step_size_l + step_size_l/2;
+      matrix z(2,1);
+      z.set(0,0,xCentre);
+      z.set(1,0,yCentre);
+      normDistrHistogr.set(xIdx,yIdx, normalDistribution(z, mean, standardDeviation));
+    }
+  }
+
+  real errorAcc = 0;
+  matrix error(xSpace,ySpace); //Später vielleicht ohne
+  for (int xIdx = 0; xIdx<xSpace; xIdx++) {
+    for (int yIdx = 0; yIdx < xypace; yIdx++) {
+      real hVal = histogram.get(xIdx, yIdx);
+      real nVal = histogram.get(xIdx, yIdx);
+      real er = pow(hVal-nVal,2);
+      error.set(xIdx, yIdx, er);
+      errorAcc += er;
+    }
+  }
+
+  std::cout<<"Errormatrix: " << error << std::endl;
+  std::cout<<"Error Summe:" << errorAcc <<std::endl;
+
 
 
   return 0;
