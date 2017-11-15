@@ -88,15 +88,15 @@ compute_histogram_error
 
 matrix computeStandardDeviation(const samples &samps, matrix mean){
   unsigned int N = samps.size();
-  matrix acc_X;
-  matrix acc_Y;
+  real acc_X = 0;
+  real acc_Y = 0;
   for (auto s = samps.begin(); s != samps.end(); s++) {
-    acc_X += pow((s->get(0,0) - mean->get(0,0)), 2);
-    acc_Y += pow((s->get(0,0) - mean->get(0,0)), 2);
+    acc_X += pow((s->get(0,0) - mean.get(0,0)), 2);
+    acc_Y += pow((s->get(1,0) - mean.get(1,0)), 2);
   }
   matrix res(2,1);
   res.set(0,0,sqrt(acc_X/N));
-  res.set(0,1,sqrt(acc_Y/N));
+  res.set(1,0,sqrt(acc_Y/N));
   return res;
 }
 
@@ -112,8 +112,8 @@ matrix computeMean(const samples &samps){
 real normalDistribution(matrix z, matrix mean, matrix stdDev){
   real z1 = z.get(0,0);
   real z2 = z.get(1,0);
-  real m1 = m.get(0,0);
-  real m2 = m.get(1,0);
+  real m1 = mean.get(0,0);
+  real m2 = mean.get(1,0);
   real d1 = stdDev.get(0,0);
   real d2 = stdDev.get(1,0);
   return (1.0/(2*M_PI*d1*d2))*exp(-0.5*((pow(z1-m1,2)/pow(d1,2))+(pow(z2-m2,2)/pow(d2,2))));
@@ -141,6 +141,8 @@ int main(int argc, char** argv)
   x_factory xFact(lower0_l, upper0_l, lower1_l, upper1_l);
   // @task: Create y_factory (utilizing x_factory) for producing y vectors.
   y_factory yFact(xFact, N_l);
+
+  std::cout << "Factorys Erstellt" <<std::endl;
   // @task: Generate S_l y vectors with sample size N_l.
   //        To store these, you can use the supplied type samples, which
   //        is a std::vector<matrix>. This is the easier way, but your
@@ -156,11 +158,18 @@ int main(int argc, char** argv)
   for (int i = 0; i<S_l ; i++){
     samps.push_back(yFact());
   }
+
+  std::cout << "Samples Erstellt" <<std::endl;
   // @task: Compute mean and standard deviation. You may do this here or define
   //        functions for it. When using a function, make sure to pass your
   //        data as const &.
   matrix mean = computeMean(samps);
+  std::cout << "Mean Berechnet" <<std::endl;
   matrix standardDeviation = computeStandardDeviation(samps, mean);
+
+  std::cout << "Deviation Berechnet" <<std::endl;
+
+
 
   // @task: Create a 2D histogram (as matrix) and feed it with the S_l
   //        vectors created above.
@@ -206,16 +215,18 @@ int main(int argc, char** argv)
   real errorAcc = 0;
   matrix error(xSpace,ySpace); //Später vielleicht ohne
   for (int xIdx = 0; xIdx<xSpace; xIdx++) {
-    for (int yIdx = 0; yIdx < xypace; yIdx++) {
+    for (int yIdx = 0; yIdx < ySpace; yIdx++) {
       real hVal = histogram.get(xIdx, yIdx);
-      real nVal = histogram.get(xIdx, yIdx);
+      real nVal = normDistrHistogr.get(xIdx, yIdx);
       real er = pow(hVal-nVal,2);
       error.set(xIdx, yIdx, er);
       errorAcc += er;
     }
   }
 
-  std::cout<<"Errormatrix: " << error << std::endl;
+  //std::cout<<"Errormatrix: " << error << std::endl;
+  std::cout<<"Mean:" << mean <<std::endl;
+  std::cout<<"stdDev:" << standardDeviation <<std::endl;
   std::cout<<"Error Summe:" << errorAcc <<std::endl;
 
 
