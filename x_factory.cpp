@@ -66,6 +66,7 @@ operator() ()
   //        distributions using the respective engines; return the matrix.
   //        Function fill_with_uniform_samples of class matrix shows how to get
   //        a random value from a distribution and an engine.
+    // generates a random vector in the given area
     matrix res(2,1);
     res.set(0,0,distribution0_m(random_engine0_m));
     res.set(1,0,distribution1_m(random_engine1_m));

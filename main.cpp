@@ -16,7 +16,7 @@
   reached |   0   +   0   +   0   +   0    = ||   0   ||
   -------------------------------------------===========
 
-  Authors: @task: Put your names here.
+  Authors: Viktor Studenyak, Fabian Albert
 */
 
 // @note: _USE_MATH_DEFINES is now directly defined in CMakeLists.txt.
@@ -88,34 +88,40 @@ compute_histogram_error
 
 matrix computeStandardDeviation(const samples &samps, matrix mean){
   unsigned int N = samps.size();
-  real acc_X = 0;
-  real acc_Y = 0;
+  real acc_x1 = 0;
+  real acc_x2 = 0;
+  //computes the Sum of (xi - mean)^2 for x1 and x2
   for (auto s = samps.begin(); s != samps.end(); s++) {
-    acc_X += pow((s->get(0,0) - mean.get(0,0)), 2);
-    acc_Y += pow((s->get(1,0) - mean.get(1,0)), 2);
+    acc_x1 += pow((s->get(0,0) - mean.get(0,0)), 2);
+    acc_x2 += pow((s->get(1,0) - mean.get(1,0)), 2);
   }
   matrix res(2,1);
-  res.set(0,0,sqrt(acc_X/N));
-  res.set(1,0,sqrt(acc_Y/N));
+  //calc. and store the stdDev (sqrt(sum(x1-mean)^2 / n))
+  res.set(0,0,sqrt(acc_x1/N));
+  res.set(1,0,sqrt(acc_x2/N));
   return res;
 }
 
 matrix computeMean(const samples &samps){
   unsigned int N = samps.size();
   matrix acc(2,1,0);
+  //Compute the sum of the samples
   for (auto s = samps.begin(); s != samps.end(); s++) {
     acc += *s;
   }
+  //...and divide it by the amount of samples
   return 1.0/N * acc;
 }
 
 real normalDistribution(matrix z, matrix mean, matrix stdDev){
+  //extract all necessary values from the Parameters
   real z1 = z.get(0,0);
   real z2 = z.get(1,0);
   real m1 = mean.get(0,0);
   real m2 = mean.get(1,0);
   real d1 = stdDev.get(0,0);
   real d2 = stdDev.get(1,0);
+  //use them in the formula of the normal distribution
   return (1.0/(2*M_PI*d1*d2))*exp(-0.5*((pow(z1-m1,2)/pow(d1,2))+(pow(z2-m2,2)/pow(d2,2))));
 }
 
@@ -154,12 +160,15 @@ int main(int argc, char** argv)
   //        data by computing mean and variance online and directly fill the
   //        histogram with the samples. This allows for larger S, of course.)
   samples samps;
+  //creates Samples and store them in samps
   for (int i = 0; i<S_l ; i++){
     samps.push_back(yFact());
   }
   // @task: Compute mean and standard deviation. You may do this here or define
   //        functions for it. When using a function, make sure to pass your
   //        data as const &.
+
+  //computes the mean and stdDev
   matrix mean = computeMean(samps);
   matrix standardDeviation = computeStandardDeviation(samps, mean);
 
@@ -172,16 +181,26 @@ int main(int argc, char** argv)
   //        The width of a histogram bin shall be step_size_l and the lower and
   //        upper bounds must correspond to those of the x vectors.
   //        Don't forget to normalize the histogram as demanded on the sheet.
-  unsigned int xSpace = (int)((upper0_l-lower0_l)/step_size_l);
-  unsigned int ySpace = (int)((upper1_l-lower1_l)/step_size_l);
-  matrix histogram(xSpace, ySpace, 0);
+
+  //calculate the dimensions of the histogram
+  unsigned int x1_space = floor((upper0_l-lower0_l)/step_size_l);
+  unsigned int x2_space = floor((upper1_l-lower1_l)/step_size_l);
+
+  //assign each sample to a slot in the histogram
+  matrix histogram(x1_space, x2_space, 0);
   for (auto s = samps.begin(); s != samps.end(); s++){
-    unsigned int xBin = floor((s->get(0,0) - lower0_l)/step_size_l);
-    unsigned int yBin = floor((s->get(1,0) - lower1_l)/step_size_l);
-    if(xBin >= 0 && xBin < xSpace && yBin >= 0 && yBin < ySpace){
-      histogram.set(xBin, yBin, histogram.get(xBin,yBin) + 1);
+    //computes the slot coordinates for a given sample
+    unsigned int x1_slot = floor((s->get(0,0) - lower0_l)/step_size_l);
+    unsigned int x2_slot = floor((s->get(1,0) - lower1_l)/step_size_l);
+    // if the computed slot isn't in the histograms range then ignore the sample
+    // (if step_size doesn't divide (upper - lower) then the last part(that is smaller then
+    // step_size) isn't part of the histogram. Through the sample might fall in this area, so we
+    // must test it)
+    if(x1_slot >= 0 && x1_slot < x1_space && x2_slot >= 0 && x2_slot < x2_space){
+      histogram.set(x1_slot, x2_slot, histogram.get(x1_slot,x2_slot) + 1);
     }
   }
+  // normalize the histogram
   histogram *= 1.0/(S_l * step_size_l * step_size_l);
 
 
@@ -195,26 +214,29 @@ int main(int argc, char** argv)
   //        squared distance between the value in the histogram bin and the
   //        theoretical value of the normal distribution.
   //        Write the single computed error value to std::cout. Be astonished.
-  matrix normDistrHistogr(xSpace,ySpace);
-  for (int xIdx = 0; xIdx<xSpace; xIdx++){
-    real xCentre = lower0_l + xIdx*step_size_l + step_size_l/2;
-    for (int yIdx = 0; yIdx<ySpace; yIdx++){
-      real yCentre = lower1_l + yIdx*step_size_l + step_size_l/2;
+
+  // Computes a second histogram, with the values of the normal distribution (under
+  // consideration of the memory used to save all samples, this little waste of memory
+  // can be accepted :) )
+  matrix normDistrHistogr(x1_space,x2_space);
+  for (int x1_idx = 0; x1_idx<x1_space; x1_idx++){
+    real x1_centre = lower0_l + x1_idx*step_size_l + step_size_l/2;
+    for (int x2_idx = 0; x2_idx<x2_space; x2_idx++){
+      real x2_centre = lower1_l + x2_idx*step_size_l + step_size_l/2;
       matrix z(2,1);
-      z.set(0,0,xCentre);
-      z.set(1,0,yCentre);
-      normDistrHistogr.set(xIdx,yIdx, normalDistribution(z, mean, standardDeviation));
+      z.set(0,0,x1_centre);
+      z.set(1,0,x2_centre);
+      normDistrHistogr.set(x1_idx,x2_idx, normalDistribution(z, mean, standardDeviation));
     }
   }
 
+  // Sum up the squared error values for each slot of the histogram
   real errorAcc = 0;
-  matrix error(xSpace,ySpace); //Nur  zum testen
-  for (int xIdx = 0; xIdx<xSpace; xIdx++) {
-    for (int yIdx = 0; yIdx < ySpace; yIdx++) {
-      real hVal = histogram.get(xIdx, yIdx);
-      real nVal = normDistrHistogr.get(xIdx, yIdx);
+  for (int x1_idx = 0; x1_idx<x1_space; x1_idx++) {
+    for (int x2_idx = 0; x2_idx < x2_space; x2_idx++) {
+      real hVal = histogram.get(x1_idx, x2_idx);
+      real nVal = normDistrHistogr.get(x1_idx, x2_idx);
       real er = pow(hVal-nVal,2);
-      error.set(xIdx, yIdx, er);
       errorAcc += er;
     }
   }
