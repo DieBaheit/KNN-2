@@ -110,7 +110,7 @@ matrix computeMean(const samples &samps){
     acc += *s;
   }
   //...and divide it by the amount of samples
-  return 1.0/N * acc;
+  return (1.0/ (real) N) * acc;
 }
 
 real normalDistribution(matrix z, matrix mean, matrix stdDev){
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
   //        histogram with the samples. This allows for larger S, of course.)
   samples samps;
   //creates Samples and store them in samps
-  for (int i = 0; i<S_l ; i++){
+  for (unsigned int i = 0; i<S_l ; i++){
     samps.push_back(yFact());
   }
   // @task: Compute mean and standard deviation. You may do this here or define
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
     // (if step_size doesn't divide (upper - lower) then the last part(that is smaller then
     // step_size) isn't part of the histogram. Through the sample might fall in this area, so we
     // must test it)
-    if(x1_slot >= 0 && x1_slot < x1_space && x2_slot >= 0 && x2_slot < x2_space){
+    if(/*x1_slot >= 0 && */ x1_slot < x1_space && /*x2_slot >= 0 &&*/ x2_slot < x2_space){
       histogram.set(x1_slot, x2_slot, histogram.get(x1_slot,x2_slot) + 1);
     }
   }
@@ -219,9 +219,9 @@ int main(int argc, char** argv)
   // consideration of the memory used to save all samples, this little waste of memory
   // can be accepted :) )
   matrix normDistrHistogr(x1_space,x2_space);
-  for (int x1_idx = 0; x1_idx<x1_space; x1_idx++){
+  for (unsigned int x1_idx = 0; x1_idx<x1_space; x1_idx++){
     real x1_centre = lower0_l + x1_idx*step_size_l + step_size_l/2;
-    for (int x2_idx = 0; x2_idx<x2_space; x2_idx++){
+    for (unsigned int x2_idx = 0; x2_idx<x2_space; x2_idx++){
       real x2_centre = lower1_l + x2_idx*step_size_l + step_size_l/2;
       matrix z(2,1);
       z.set(0,0,x1_centre);
@@ -232,8 +232,8 @@ int main(int argc, char** argv)
 
   // Sum up the squared error values for each slot of the histogram
   real errorAcc = 0;
-  for (int x1_idx = 0; x1_idx<x1_space; x1_idx++) {
-    for (int x2_idx = 0; x2_idx < x2_space; x2_idx++) {
+  for (unsigned int x1_idx = 0; x1_idx<x1_space; x1_idx++) {
+    for (unsigned int x2_idx = 0; x2_idx < x2_space; x2_idx++) {
       real hVal = histogram.get(x1_idx, x2_idx);
       real nVal = normDistrHistogr.get(x1_idx, x2_idx);
       real er = pow(hVal-nVal,2);
